@@ -1,13 +1,15 @@
-import CryptoJS from "crypto-js"; // Si framework JS utilisé 
+import CryptoJS from "crypto-js"; // Assure-toi que CryptoJS est installé
 
-const secretKey = "MaCléSecrèteUltraSécure"; // Clé de sécurité à changer
+const secretKey = "MaCléSecrèteUltraSécure"; // ⚠️ DOIT ÊTRE IDENTIQUE SUR LE BACK-END
 
 function encryptPassword(password) {
     return CryptoJS.AES.encrypt(password, secretKey).toString();
 }
 
-async function loginUser(email, password) {
-    const encryptedPassword = encryptPassword(password); // Chiffrement
+async function loginUser(email, password, isEncrypted = false) {
+    let encryptedPassword = isEncrypted ? password : encryptPassword(password); // Vérifie si déjà chiffré
+
+    console.log("🔐 Mot de passe envoyé :", encryptedPassword); // Vérifie avant envoi
 
     const response = await fetch("http://127.0.0.1:8000/api/login", {
         method: "POST",
@@ -18,9 +20,10 @@ async function loginUser(email, password) {
     });
 
     const data = await response.json();
-    console.log(data);
+    console.log("Réponse du serveur:", data);
 }
 
-let email = "lynna@testo.fr";
-let password = "password";
-console.log(loginUser(email, password)); // Appel de la fonction
+// 🛠 Test
+let email = "johnnydoe@example.com";
+let password = "U2FsdGVkX1+J4xz9m6F3HfF5I"; // vrai mot de passe en clair
+loginUser(email, password, false); // false = le mot de passe n'est pas encore chiffré

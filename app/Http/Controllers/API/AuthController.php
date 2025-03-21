@@ -48,37 +48,27 @@ public function decryptPassword($encryptedPassword)
     }
 
     public function login(Request $request)
-    {
-    // Validation stricte pour éviter toute donnée non prévue
-    $validatedData = $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
+{
+    $user = User::where('email', $request->email)->first();
 
-    if (!Auth::attempt($validatedData)) {
+    if (!$user) {
+        return response()->json(['message' => 'User not found'], 404);
+    }
+
+    // Déchiffrement du mot de passe reçu
+    try {
+        $decryptedPassword = Crypt::decryptString($request->password);
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Error decrypting password'], 400);
+    }
+
+    // Vérification avec le hash en base
+    if (!Hash::check($decryptedPassword, $user->password)) {
         return response()->json(['message' => 'Invalid credentials'], 401);
     }
 
-    $user = Auth::user();
-    $token = $user->createToken('authToken')->plainTextToken;
-
-    return response()->json([
-        'message' => 'Login successful',
-        'token' => $token,
-        'user' => $user
-    ]);
-
-    // Déchiffrement du mot de passe
-    $decryptedPassword = $this->decryptPassword($request->password);
-
-    if (Auth::attempt(['email' => $request->email, 'password' => $decryptedPassword])) {
-        $user = Auth::user();
-        $token = $user->createToken('authToken')->plainTextToken;
-        return response()->json(['token' => $token], 200);
-    }
-
-    return response()->json(['message' => 'Invalid credentials'], 401);
-    }
+    return response()->json(['token' => $user->createToken('API Token')->plainTextToken]);
+}
 
 
     public function logout(Request $request)
